@@ -8,13 +8,13 @@ import java.util.List;
 public class TrackHolder {
 
 
-    private List<Track> tracks;
+    private List<Track> track;
 
-    public List<Track> getTracks() {
-        return tracks;
+    public List<Track> getTrack() {
+        return track;
     }
 
-    public void setTracks(List<Track> tracks) {
-        this.tracks = tracks;
+    public void setTrack(List<Track> track) {
+        this.track = track;
     }
 }

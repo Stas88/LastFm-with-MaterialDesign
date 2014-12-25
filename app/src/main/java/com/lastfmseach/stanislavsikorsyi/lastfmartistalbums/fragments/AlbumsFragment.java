@@ -9,18 +9,25 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.R;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.adapters.AlbumAdapter;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.api.ApiClient;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model.Album;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model.IAlbum;
+import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model.Image;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model.TopAlbumsHolder;
+import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.realm.AlbumRealmModel;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.utils.Constants;
+import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import io.realm.Realm;
+import io.realm.RealmQuery;
+import io.realm.RealmResults;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -65,7 +72,12 @@ public class AlbumsFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         initListView();
-        downloadAlbumData();
+        if(Utils.isOnline(getActivity())) {
+            downloadAlbumData();
+        } else {
+            Toast.makeText(getActivity(), R.string.no_connection, Toast.LENGTH_SHORT).show();
+            getAlbumsFromRealmStorage();
+        }
     }
 
     /**
@@ -88,21 +100,26 @@ public class AlbumsFragment extends Fragment {
      * @param position Position of item in list
      */
     private void onClickItem(int position) {
-        TracksFragment newFragment = new TracksFragment();
-        Bundle args = new Bundle();
-        args.putString(Constants.ALBUM_NAME, albumList.get(position).getName());
-        args.putString(Constants.ARTIST_NAME, artistName);
-        Log.d(TAG, "album:" + albumList.get(position).getName());
-        newFragment.setArguments(args);
+        if(Utils.isOnline(getActivity())) {
+            TracksFragment newFragment = new TracksFragment();
+            Bundle args = new Bundle();
+            args.putString(Constants.ALBUM_NAME, albumList.get(position).getName());
+            args.putString(Constants.ARTIST_NAME, artistName);
+            Log.d(TAG, "album:" + albumList.get(position).getName());
+            newFragment.setArguments(args);
 
-        FragmentTransaction transaction = getFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, newFragment);
-        transaction.addToBackStack(null);
-        transaction.commit();
+            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, newFragment);
+            transaction.addToBackStack("Album");
+            transaction.commit();
+        } else {
+            Toast.makeText(getActivity(), R.string.no_connection, Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     /**
-     * Download data from server
+     * Download data from server in separate thread
      */
     public void downloadAlbumData() {
         if (!isDownloadInProgress) {
@@ -116,6 +133,7 @@ public class AlbumsFragment extends Fragment {
                         @Override
                         public void success(TopAlbumsHolder albums, Response response) {
                             consumeApiData(albums.getTopAlbums().getAlbum());
+
                         }
 
                         @Override
@@ -138,9 +156,63 @@ public class AlbumsFragment extends Fragment {
             albumList.addAll(albumsFromServer);
             // Tell the adapter that it needs to rerender
             albumAdapter.notifyDataSetChanged();
+            //Save cache
+            addObjectsToRealmStorage(albumsFromServer);
+
 
         }
         isDownloadInProgress = false;
+    }
+
+    /**
+     * Adding these objects to the cache in nosql storage
+     * @param albumsFromServer List of albums from server
+     */
+    private void addObjectsToRealmStorage(List<Album> albumsFromServer) {
+        Realm realm = Realm.getInstance(getActivity());
+        realm.beginTransaction();
+
+        //Delete previously saved objects from search results
+        RealmQuery<AlbumRealmModel> query = realm.where(AlbumRealmModel.class);
+        RealmResults<AlbumRealmModel> result = query.findAll();
+        result.clear();
+
+        //Write new objects of current search results
+        for(Album album : albumsFromServer) {
+            AlbumRealmModel albumRealm = realm.createObject(AlbumRealmModel.class); // Create a new object
+            albumRealm.setName(album.getName());
+            albumRealm.setPlaycount(album.getPlaycount());
+            albumRealm.setImageUrl(album.getImage().get(Constants.IMAGE_SIZE_SMALL).getText());
+        }
+        realm.commitTransaction();
+        realm.close();
+    }
+
+    public void getAlbumsFromRealmStorage() {
+        Realm realm = Realm.getInstance(getActivity());
+        realm.beginTransaction();
+
+        //Query previously saved objects from search results
+        RealmQuery<AlbumRealmModel> query = realm.where(AlbumRealmModel.class);
+        RealmResults<AlbumRealmModel> result = query.findAll();
+        List<Album> albumsFromCache = new ArrayList<Album>();
+        for(AlbumRealmModel albumRealm : result) {
+            Album album = new Album();
+            album.setName(albumRealm.getName());
+            album.setPlaycount(albumRealm.getPlaycount());
+            Image image = new Image();
+            image.setText(albumRealm.getImageUrl());
+            List<Image> imageList = new ArrayList<Image>();
+            imageList.add(image);
+            album.setImage(imageList);
+            albumsFromCache.add(album);
+        }
+        realm.commitTransaction();
+        realm.close();
+
+        albumList.clear();
+        albumList.addAll(albumsFromCache);
+
     }
 
 

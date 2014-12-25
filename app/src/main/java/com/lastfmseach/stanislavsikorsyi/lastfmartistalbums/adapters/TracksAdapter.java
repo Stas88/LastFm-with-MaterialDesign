@@ -6,11 +6,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.TextView;
 
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.R;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model.Track;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Adapter for Files from search
@@ -36,16 +40,27 @@ public class TracksAdapter extends ArrayAdapter<Track> {
     public View getView(int position, View convertView, ViewGroup parent) {
         View rowView = convertView;
         if (null == rowView) {
-            rowView = inflater.inflate(R.layout.albums_list_item, null);
+            rowView = inflater.inflate(R.layout.tracks_list_item, null);
             ViewHolder viewHolder = new ViewHolder();
+            viewHolder.name = (TextView)rowView.findViewById(R.id.track_name);
+            viewHolder.duration = (TextView)rowView.findViewById(R.id.track_duration);
             rowView.setTag(viewHolder);
         }
         ViewHolder holder = (ViewHolder) rowView.getTag();
-
+        Track track = trackList.get(position);
+        String name = track.getName();
+        int duration = Integer.valueOf(track.getDuration());
+        holder.name.setText(name);
+        int seconds = (int) (duration) % 60 ;
+        int minutes = (int) ((duration / 60) % 60);
+        holder.duration.setText(String.format("%d : %02d",
+                minutes,seconds));
         return rowView;
     }
 
     private static class ViewHolder {
+        public TextView name;
+        public TextView duration;
     }
 
 

@@ -99,8 +99,9 @@ public class TracksFragment extends Fragment {
 
                         @Override
                         public void success(TrackHolder tracks, Response response) {
-                            //consumeApiData(albums.getTopAlbums().getAlbum());
-                            Log.d(TAG, "success:  " + tracks.getTracks().size());
+                            Log.d(TAG, "success");
+                            Log.d(TAG, "success:  " + tracks.getTrack().size());
+                            consumeApiData(tracks.getTrack());
 
                         }
 

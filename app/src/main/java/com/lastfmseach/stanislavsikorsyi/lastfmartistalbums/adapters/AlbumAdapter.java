@@ -43,8 +43,8 @@ public class AlbumAdapter extends ArrayAdapter<IAlbum> {
             rowView = inflater.inflate(R.layout.albums_list_item, null);
             ViewHolder viewHolder = new ViewHolder();
             viewHolder.imageView = (ImageView) rowView.findViewById(R.id.album_thumbnail);
-            viewHolder.name = (TextView) rowView.findViewById(R.id.album_name);
-            viewHolder.playground = (TextView) rowView.findViewById(R.id.album_playcount);
+            viewHolder.name = (TextView) rowView.findViewById(R.id.track_name);
+            viewHolder.playground = (TextView) rowView.findViewById(R.id.track_duration);
 
             rowView.setTag(viewHolder);
         }

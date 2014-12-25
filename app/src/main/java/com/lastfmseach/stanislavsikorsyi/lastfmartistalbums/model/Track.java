@@ -6,7 +6,7 @@ package com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model;
 public class Track {
 
     private String name;
-    private String duration;
+    private int duration;
 
 
     public String getName() {
@@ -17,11 +17,11 @@ public class Track {
         this.name = name;
     }
 
-    public String getDuration() {
+    public int getDuration() {
         return duration;
     }
 
-    public void setDuration(String duration) {
+    public void setDuration(int duration) {
         this.duration = duration;
     }
 }

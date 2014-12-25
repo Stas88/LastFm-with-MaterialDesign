@@ -11,6 +11,7 @@ public class Album implements IAlbum {
     private String name;
     private List<Image> image;
 
+
     public Album() {}
 
     @Override
@@ -42,4 +43,6 @@ public class Album implements IAlbum {
     public void setImage(List<Image> image) {
         this.image = image;
     }
+
+
 }

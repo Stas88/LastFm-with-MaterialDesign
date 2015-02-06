@@ -1,5 +1,6 @@
 package com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -10,9 +11,11 @@ public class Album implements IAlbum {
     private int playcount;
     private String name;
     private List<Image> image;
+    private long id;
 
 
-    public Album() {}
+    public Album() {
+    }
 
     @Override
     public int getPlaycount() {
@@ -44,5 +47,9 @@ public class Album implements IAlbum {
         this.image = image;
     }
 
+    @Override
+    public long getId() {
+        return playcount;
+    }
 
 }

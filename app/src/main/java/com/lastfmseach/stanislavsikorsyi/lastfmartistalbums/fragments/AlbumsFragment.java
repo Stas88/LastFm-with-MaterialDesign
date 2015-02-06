@@ -3,12 +3,16 @@ package com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.fragments;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ListView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.R;
@@ -19,6 +23,7 @@ import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model.IAlbum;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model.Image;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.model.TopAlbumsHolder;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.realm.AlbumRealmModel;
+import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.ui.DragController;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.utils.Constants;
 import com.lastfmseach.stanislavsikorsyi.lastfmartistalbums.utils.Utils;
 
@@ -35,11 +40,11 @@ import retrofit.client.Response;
 /**
  * Fragment to show albums of certain artist in list
  */
-public class AlbumsFragment extends Fragment {
+public class AlbumsFragment extends Fragment implements AlbumAdapter.ItemClickListener {
 
 
     private final String TAG = "AlbumsFragment";
-    private ListView albumListView;
+    private RecyclerView recyclerView;
     private AlbumAdapter albumAdapter;
     private boolean isDownloadInProgress = false;
     private List<IAlbum> albumList = new ArrayList<IAlbum>();
@@ -51,7 +56,12 @@ public class AlbumsFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(
                 R.layout.fragment_album_search, container, false);
-        albumListView = (ListView) rootView.findViewById(R.id.listView_of_albums);
+        ImageView overlay = (ImageView) rootView.findViewById(R.id.overlay);
+        recyclerView = (RecyclerView) rootView.findViewById(R.id.listView_of_albums);
+        GridLayoutManager layoutManager = new GridLayoutManager(getActivity(), 3);
+        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.addOnItemTouchListener(new DragController(recyclerView, overlay));
         return rootView;
     }
 
@@ -67,6 +77,15 @@ public class AlbumsFragment extends Fragment {
         setRetainInstance(true);
     }
 
+    public void setAlbums(List<IAlbum> albums) {
+        AlbumAdapter adapter = new AlbumAdapter(getActivity(), albums, this);
+        recyclerView.setAdapter(adapter);
+    }
+
+    @Override
+    public void itemClicked(IAlbum item) {
+        onClickItem(item);
+    }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -85,27 +104,20 @@ public class AlbumsFragment extends Fragment {
      */
     private void initListView() {
         albumAdapter = new AlbumAdapter(getActivity(), albumList, this);
-        albumListView.setAdapter(albumAdapter);
-        albumListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                onClickItem(position);
-            }
-        });
+        recyclerView.setAdapter(albumAdapter);
     }
 
     /**
      * Click on file item
-     * @param position Position of item in list
+     * @param item Item of album
      */
-    private void onClickItem(int position) {
+    private void onClickItem(IAlbum item) {
         if(Utils.isOnline(getActivity())) {
             TracksFragment newFragment = new TracksFragment();
             Bundle args = new Bundle();
-            args.putString(Constants.ALBUM_NAME, albumList.get(position).getName());
+            args.putString(Constants.ALBUM_NAME, item.getName());
             args.putString(Constants.ARTIST_NAME, artistName);
-            Log.d(TAG, "album:" + albumList.get(position).getName());
+            Log.d(TAG, "album:" + item.getName());
             newFragment.setArguments(args);
 
             FragmentTransaction transaction = getFragmentManager().beginTransaction();

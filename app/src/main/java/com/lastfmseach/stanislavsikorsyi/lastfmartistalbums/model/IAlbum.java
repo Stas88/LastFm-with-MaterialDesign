@@ -17,4 +17,6 @@ public interface IAlbum {
     List<Image> getImage();
 
     void setImage(List<Image> image);
+
+    long getId();
 }
